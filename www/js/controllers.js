@@ -63,8 +63,8 @@ angular.module('starter.controllers', [])
 
  */
   .constant('ApiEndpoint',{
-    //url: 'http://localhost:8100/signin' // avoid cors for web testing
-    url:'http://172.25.50.21:8100' // avoid cors for ios in office
+    url: 'http://localhost:8100' // avoid cors for web testing
+    //url:'http://172.25.50.21:8100' // avoid cors for ios in office
     //url: 'http://192.168.2.11:8100'    //mississauga home
     //TBD for connecting to eric's amazon server
   })
@@ -214,13 +214,12 @@ angular.module('starter.controllers', [])
       var watchlistArr = localStorageService.get('watchlists');
       for (var i = 0; i < watchlistArr.length; i++) {
         if (watchlistArr[i].id == id) {
-          watchlistArr.splice(i, 1);
+          $scope.watchlists.splice(i, 1);
           break;
         }
       }
 
-      localStorageService.update('watchlists', watchlistArr);
-      $scope.watchlists = watchlistArr;
+      localStorageService.update('watchlists', $scope.watchlists);
 
     }
 
