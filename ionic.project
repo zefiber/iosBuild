@@ -1,0 +1,14 @@
+{
+  "name": "shareShareApp",
+  "app_id": "",
+  "proxies":[
+      {
+        "path": "/signin",
+        "proxyUrl": "http://localhost:8200/signin"
+      },
+      {
+        "path": "/securitis",
+        "proxyUrl": "http://107.22.132.180:8732/securitis/"
+      }
+    ]
+}

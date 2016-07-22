@@ -1,0 +1,46 @@
+
+
+<ion-view view-title="My Account">
+  <ion-header-bar class="bar-calm">
+
+    <h1 class="title">My Account</h1>
+  </ion-header-bar>
+
+  <ion-nav-bar class="bar-calm">
+
+    <ion-nav-buttons side="first">
+      <button class="button button-icon icon ion-plus-circled" ng-click="showSearchNew()">
+      </button>
+    </ion-nav-buttons>
+
+    <ion-nav-buttons side="secondary">
+      <button class="button button-clear" ng-click="accountEditDone()">Done</button>
+    </ion-nav-buttons>
+
+  </ion-nav-bar>
+
+
+  <ion-content overflow-scroll="true" class="ionic-scroll has-header has-tabs" ng-controller="customizeWatchListCtrl">
+    <!-- ionList allows us to make a complex list with swipe buttons, reordering, and more -->
+    <ion-list show-reorder="true" show-delete="true">
+
+      <!-- Repeat over each quote, to display the current details and name -->
+      <ion-item ng-repeat="symbol in symbols">
+        <ion-delete-button class="ion-minus-circled"
+                           ng-click="onItemDelete($index)"></ion-delete-button>
+        <div style="display:inline-block;width:33%" class="col-offset-10">{{symbol}}</div>
+        <div style="display:inline-block;width:33%"></div>
+        <div style="display:inline-block;width:33%" ></div>
+
+        <!-- Option and reorder button for list items -->
+        <ion-option-button class="button-assertive" ng-click="remove($index)">Remove</ion-option-button>
+        <ion-reorder-button on-reorder="reorder(symbol, $fromIndex, $toIndex)" class="ion-navicon"></ion-reorder-button>
+
+      </ion-item>
+    </ion-list>
+
+
+  </ion-content>
+
+
+</ion-view>

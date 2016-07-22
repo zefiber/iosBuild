@@ -1,0 +1,63 @@
+<ion-view view-title="Watch List 1">
+  <ion-header-bar class="bar-calm">
+
+    <h1 class="title">Watch List 1</h1>
+  </ion-header-bar>
+
+  <ion-nav-bar class="bar-calm">
+    <ion-nav-buttons side="primary">
+      <button class="button button-clear" ng-click="goBackToListWatchList()">Back</button>
+    </ion-nav-buttons>
+
+    <ion-nav-buttons side="secondary">
+      <button class="button button-clear" ng-click="goCustomizeWatchList()">Customize</button>
+    </ion-nav-buttons>
+  </ion-nav-bar>
+  <div class="bar bar-subheader">
+    <h2 class="title">
+      <div class="row">
+        <div class="col">Symbol</div>
+        <div class="col">Bid Size</div>
+        <div class="col">Bid</div>
+        <div class="col">Ask</div>
+        <div class="col">Ask Size</div>
+      </div>
+    </h2>
+  </div>
+
+  <ion-content scrollbar-y="false" overflow-scroll="true" class="ionic-scroll has-header has-subheader has-tabs" ng-controller="listWatchListCtrl">
+
+    <!-- two buttons for debugging socket connection-->
+    <!--<div class="row">
+      <div class="col col-center">
+        <button class="button button-calm" ng-click="connectSocket()">
+          connect
+        </button>
+        <button class="button button-calm" ng-click="disConnectSocket()">
+          disconnect
+        </button>
+      </div>
+    </div>
+    -->
+    <ion-list>
+      <!-- Repeat over each quote, to display the current details and name -->
+      <ion-item ng-repeat="stock in stockList">
+
+        <div class="row">
+          <div class="col">{{stock.symbol}}</div>
+          <div class="col">{{stock.bidsize}}</div>
+          <div class="col">{{stock.bid | currency: '$'}}</div>
+          <div class="col">{{stock.ask | currency:'$'}}</div>
+          <div class="col">{{stock.asksize}}</div>
+        </div>
+      </ion-item>
+    </ion-list>
+
+    <br>
+    <div ng-show="!stockList.length" class="col-offset-33 no-results">
+      <p>No Stocks Subscribed</p>
+    </div>
+  </ion-content>
+
+
+</ion-view>
