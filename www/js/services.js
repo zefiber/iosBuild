@@ -67,18 +67,15 @@ services.factory('signInService', function ($q, $http, ApiEndpoint, socketServ) 
         var jsonObj = angular.toJson(msg);
         console.log("jsonObj:" + jsonObj);
 
-        var retVal;
-        socketServ.doReq(jsonObj).then(function success(resp) {
-            console.log("do Req success resp:" + resp);
-            return defer.resolve(resp);
-
-        }, function error(err) {
-            console.log("do Req error resp:" + err);
-            return defer.reject(err);
-
-        }, function notify(data) {
+        socketServ.doReq(jsonObj).then(function success(data) {
             console.log("do Req notify resp:" + data);
-            return defer.resolve(data);
+             defer.resolve(data);
+        },function error(err) {
+            console.log("do Req error resp:" + err);
+            defer.reject(err);
+        },function notify(data) {
+            console.log("do Req notify resp:" + data);
+            defer.resolve(data);
         });
 
         return defer.promise;
@@ -104,23 +101,17 @@ services.factory('sendEmailForResetService', function ($q, $http) {
 
     };
 
-    // return{
-    //   save: function(form){
-    //     return $http.post('http://localhost:8080/signup',form,{
-    //       method:'Post'
-    //     });
-    //   }
-    // }
     return sendEmailForResetService;
 });
 
 
-services.factory('signUpService', function ($q, $http) {
+services.factory('signUpService', function ($q, $http, socketServ) {
 
     var signUpService = {};
     // Create a new deferred object
-    var defer = $q.defer();
+
     signUpService.create = function (bodyData) {
+        var defer = $q.defer();
         var myobject = {
             email: bodyData.email,
             password: bodyData.password,
@@ -129,20 +120,26 @@ services.factory('signUpService', function ($q, $http) {
             lastname: bodyData.lastname
         };
 
-        var jsonObj = angular.toJson(myobject);
-        var url = "http://localhost:8200/signup";
+        var msg = {action:"registerrequest", username:myobject.username, password:myobject.password, email:myobject.email};
+        var jsonObj = angular.toJson(msg);
 
-        return $http.post(url, jsonObj);
+        // var url = "http://localhost:8200/signup";
+        // return $http.post(url, jsonObj);
 
+        socketServ.doReq(jsonObj).then( function success(data) {
+            console.log("do Req success resp:" + data);
+             defer.resolve(data);
+        }, function error(err) {
+            console.log("do Req error resp:" + err);
+            defer.reject(err);
+        },function notify(data) {
+            console.log("do Req notify resp:" + data);
+            defer.resolve(data);
+        });
+
+        return defer.promise;
     };
 
-    // return{
-    //   save: function(form){
-    //     return $http.post('http://localhost:8080/signup',form,{
-    //       method:'Post'
-    //     });
-    //   }
-    // }
     return signUpService;
 });
 
@@ -188,12 +185,14 @@ services.factory('socketServ', function ($rootScope, $log, $q, localStorageServi
 
         var ws = $rootScope.ws;
 
-        ws.onopen = function (event) {
-            $log.log("Web Socket connection has been established successfully");
-
+        if(ws.readyState){
             //ws.send('{"action":"subscribe","symbol":"uwti"}');
             //{"action":"subscribe","equityid":0}
             ws.send(msgArr);
+        }
+
+        ws.onopen = function (event) {
+            $log.log("Web Socket connection has been established successfully");
         };
 
         ws.onmessage = function (event) {
@@ -214,50 +213,7 @@ services.factory('socketServ', function ($rootScope, $log, $q, localStorageServi
     return this;
 })
 
-services.factory('socketService', function ($rootScope, $log, $q) {
-    // this.socketConn = '';
-    // this.getSocketConn = function () {
-    //     return this.socketConn;
-    // }
-    // this.setSocketConn = function (socketConn) {
-    //     this.socketConn = socketConn;
-    // }
-
-    this.loadRealTimeQuotes = function (msgArr) {
-        var d = $q.defer();
-        // var ws = new WebSocket("ws://127.0.0.1:8181/");
-        // var ws = new WebSocket("ws://172.24.142.2:8877"); // local windows
-        // var ws = new WebSocket("ws://107.22.132.180:8877/");
-        // this.setSocketConn(ws);
-
-        var ws = $rootScope.ws;
-        ws.send(msgArr);
-        ws.onopen = function (event) {
-            $log.log("Web Socket connection has been established successfully");
-            //ws.send('{"action":"subscribe","symbol":"uwti"}');
-            //{"action":"subscribe","equityid":0}
-
-        };
-
-        ws.onmessage = function (event) {
-            //[{"symbol": "uwti","ask": 66.92539153943089,"bid": 10.900888923043798,"bidsize": 347,"asksize": 354}]
-            $log.log("received a message", event.data);
-            var stockObjArr = JSON.parse(event.data);
-            d.notify(stockObjArr);
-            // d.resolve(stockObjArr);
-        };
-
-        ws.onclose = function (event) {
-            $log.log("connection closed");
-        };
-        return d.promise;
-    }
-
-    return this;
-
-});
-
-services.factory('restfulApiService', function ($rootScope, $log, $http, $q) {
+services.factory('restfulApiService', function ($log, $http, $q) {
 
     this.doRestfulReq = function (url) {
         var d = $q.defer();

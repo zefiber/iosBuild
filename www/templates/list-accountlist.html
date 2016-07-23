@@ -28,19 +28,21 @@ navigation history that also transitions its views in and out.
       <div class="bar bar-subheader">
         <h2 class="title">
           <div class="row">
-            <div class="col">Account List Name</div>
-            <div class="col">Note</div>
+            <div class="col">Account ID</div>
+            <div class="col">Cash Balance</div>
           </div>
         </h2>
       </div>
 
-      <ion-content overflow-scroll="true" class="ionic-scroll has-header has-subheader has-tabs" ng-controller="listAcctListCtrl">
+      <ion-content overflow-scroll="true" class="ionic-scroll has-header has-subheader has-tabs" ng-controller="listAcctListCtrl" >
 
         <ion-list>
           <!-- Repeat over each quote, to display the current details and name -->
-          <ion-item ng-click="goDetailAcctList()">
-            <div style="display:inline-block;width:33%" class="col-offset-10">AccountList 1</div>
-            <div style="display:inline-block;width:33%" class="col-offset-10">Try accountlist</div>
+          <ion-item ng-click="goDetailAcctList()" ng-repeat="account in accountlist">
+            <div class="row">
+              <div class="col col-offset-20">{{account.account_id}}</div>
+              <div class="col col-offset-10">{{account.cash_balance}}</div>
+            </div>
           </ion-item>
         </ion-list>
 
