@@ -1,69 +1,7 @@
 angular.module('starter.controllers', [])
 
-/*
- .controller('AppCtrl', function ($scope, $ionicModal, $timeout) {
-
- // With the new view caching in Ionic, Controllers are only called
- // when they are recreated or on app start, instead of every page change.
- // To listen for when this page is active (for example, to refresh data),
- // listen for the $ionicView.enter event:
- //$scope.$on('$ionicView.enter', function(e) {
- //});
-
- // Form data for the login modal
- $scope.loginData = {};
-
- // Create the login modal that we will use later
- $ionicModal.fromTemplateUrl('templates/login.html', {
- scope: $scope
- }).then(function (modal) {
- $scope.modal = modal;
- });
-
- // Triggered in the login modal to close it
- $scope.closeLogin = function () {
- $scope.modal.hide();
- };
-
- // Open the login modal
- $scope.login = function () {
- $scope.modal.show();
- };
-
- // Perform the login action when the user submits the login form
- $scope.doLogin = function () {
- console.log('Doing login', $scope.loginData);
-
- // Simulate a login delay. Remove this and replace with your login
- // code if using a login system
- $timeout(function () {
- $scope.closeLogin();
- }, 1000);
- };
- })
-
- .controller('PlaylistsCtrl', function ($scope) {
- $scope.playlists = [
- {title: 'Reggae', id: 1},
- {title: 'Chill', id: 2},
- {title: 'Dubstep', id: 3},
- {title: 'Indie', id: 4},
- {title: 'Rap', id: 5},
- {title: 'Cowbell', id: 6}
- ];
- })
-
- .controller('WelcomeCtrl', function ($scope, $location, $log, $ionicActionSheet, pageNameService) {
- pageNameService.setPageName("welcome");
- $log.log("current page:" + pageNameService.getPageName());
- })
-
- .controller('PlaylistCtrl', function ($scope, $stateParams) {
- });
-
- */
   .constant('ApiEndpoint',{
-    url: 'http://localhost:8100' // avoid cors for web testing
+    url: 'http://localhost:8732' // avoid cors for web testing
     //url:'http://172.25.50.21:8100' // avoid cors for ios in office
     //url: 'http://192.168.2.11:8100'    //mississauga home
     //TBD for connecting to eric's amazon server
@@ -127,7 +65,7 @@ angular.module('starter.controllers', [])
 
   })
 
-  .controller('LoginCtrl', function ($scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, pageNameService, signInService) {
+  .controller('LoginCtrl', function ($scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, $rootScope, pageNameService, signInService) {
 
     $scope.login = function () {
       $scope.pageName = "login";
@@ -135,9 +73,16 @@ angular.module('starter.controllers', [])
       //console.log($scope.model.username);
       //console.log($scope.model.password);
 
+      // var ws = new WebSocket("ws://127.0.0.1:8181/");
+      // var ws = new WebSocket("ws://107.22.132.180:8877/");
+      $rootScope.ws = new WebSocket("ws://172.24.142.2:8877"); // local windows
+
+
+
+
       //connect to service to validate
       signInService.validateUser($scope.model).then(function success(data) {
-        if (data && data === "user validation fail") {
+        if (data && data.success == false) {
           console.log("connect fail!");
           $ionicPopup.alert({
             title: 'Sign-in Failed',
@@ -427,8 +372,8 @@ angular.module('starter.controllers', [])
     }
 
     $scope.disConnectSocket = function () {
-      var ws = socketService.getSocketConn();
-      ws.close();
+      // var ws = socketService.getSocketConn();
+      // ws.close();
     }
 
     // start to connect to the socket to retrieve real time data when come to the page
@@ -441,7 +386,7 @@ angular.module('starter.controllers', [])
     $scope.$on("$ionicView.beforeLeave", function (event, data) {
       // handle event
       console.log("State: beforeLeaveDetailWatchListPage");
-      $scope.disConnectSocket();
+     // $scope.disConnectSocket();
     });
 
 
@@ -499,8 +444,8 @@ angular.module('starter.controllers', [])
     }
 
     $scope.disConnectSocket = function () {
-      var ws = socketService.getSocketConn();
-      ws.close();
+     // var ws = socketService.getSocketConn();
+      //ws.close();
     }
 
     // start to connect to the socket to retrieve real time data when come to the page
@@ -513,13 +458,13 @@ angular.module('starter.controllers', [])
     $scope.$on("$ionicView.beforeLeave", function (event, data) {
       // handle event
       console.log("State: beforeLeaveAcctHoldingsPage");
-      $scope.disConnectSocket();
+      // $scope.disConnectSocket();
     });
 
 
   })
 
-  .controller('MainCtrl', function ($scope, $state, $location, $http, $log, $timeout, $ionicFilterBar, $ionicHistory, pageNameService, ApiEndpoint) {
+  .controller('MainCtrl', function ($scope, $state, $location, $http, $log, $timeout, $ionicFilterBar, $ionicHistory, pageNameService, ApiEndpoint, restfulApiService) {
     pageNameService.setPageName("index");
     $scope.pageName = pageNameService.getPageName();
     $log.log(pageNameService.getPageName());
@@ -545,20 +490,6 @@ angular.module('starter.controllers', [])
     //filter bar
     var filterBarInstance;
 
-    // function getItems(stockList) {
-    //   var items = [];
-    //   //generate added test data
-    //   // for (var x = 1; x < 2000; x++) {
-    //   //   items.push({text: 'This is item number ' + x + ' which is an ' + (x % 2 === 0 ? 'EVEN' : 'ODD') + ' number.'});
-    //   // }
-    //   angular.forEach(stockList, function (stockname) {
-    //     items.push({text: stockname});
-    //   })
-    //
-    //
-    //   $scope.items = items;
-    // }
-
     //TO DO: $http to get the stock list
     //var stockList = ['YHOO', 'AAPL', 'GOOG', 'MSFT', 'FB', 'TWTR'];
 
@@ -570,11 +501,11 @@ angular.module('starter.controllers', [])
             return;
           }
           var urlApi = ApiEndpoint.url + "/securitis";
-          var URL = urlApi + "/" +filterText.toUpperCase();
-          $http.get(URL).then(function (resp) {
-            console.log('Search securitis symbol success', resp); //JSON Object
-            $scope.items = resp.data;
-          }, function (err) {
+          var url = urlApi + "/" +filterText.toUpperCase();
+          restfulApiService.doRestfulReq(url).then(function success(resp){
+            console.log('Search securitis symbol success', resp);
+            $scope.items = resp;
+          }, function error(err) {
             console.error('Search securitis symbol err', err);
           })
 
@@ -601,6 +532,7 @@ angular.module('starter.controllers', [])
 
     $scope.showSearchNew = function () {
       $location.path("/searchNewStock");
+
     }
 
 
@@ -731,10 +663,37 @@ angular.module('starter.controllers', [])
   })
 
 
-  .controller('searchNewStockCtrl', function ($rootScope, $scope, $state, $location, $log, $timeout, $ionicFilterBar, localStorageService, pageNameService) {
+  .controller('searchNewStockCtrl', function ($rootScope, $scope, $http, $state, $location, $log, $timeout, $ionicFilterBar, restfulApiService, localStorageService, pageNameService, ApiEndpoint) {
     pageNameService.setPageName("searchNewStock");
     $scope.pageName = pageNameService.getPageName();
     $log.log(pageNameService.getPageName());
+
+    $scope.showFilterBar = function () {
+      filterBarInstance = $ionicFilterBar.show({
+        items: $scope.items,
+        update: function (filteredItems, filterText) {
+          if (!filterText) {
+            return;
+          }
+          var urlApi = ApiEndpoint.url + "/securitis";
+          var url = urlApi + "/" +filterText.toUpperCase();
+          restfulApiService.doRestfulReq(url).then(function success(resp){
+            console.log('Search securitis symbol success', resp);
+            $scope.items = resp;
+          }, function error(err) {
+            console.error('Search securitis symbol err', err);
+          })
+
+
+          //$scope.items = filteredItems;
+          if (filterText) {
+            console.log(filterText);
+          }
+        }
+      });
+    };
+
+    $scope.showFilterBar();
 
     $scope.addNewStock = function (stockItem) {
       // localStorageService.clear('stockObjs');
