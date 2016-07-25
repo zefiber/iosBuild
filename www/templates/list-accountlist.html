@@ -36,16 +36,23 @@ navigation history that also transitions its views in and out.
 
       <ion-content overflow-scroll="true" class="ionic-scroll has-header has-subheader has-tabs" ng-controller="listAcctListCtrl" >
 
-        <ion-list>
+        <ion-list can-swipe="true">
           <!-- Repeat over each quote, to display the current details and name -->
           <ion-item ng-click="goDetailAcctList()" ng-repeat="account in accountlist">
             <div class="row">
               <div class="col col-offset-20">{{account.account_id}}</div>
               <div class="col col-offset-10">{{account.cash_balance}}</div>
             </div>
+            <ion-option-button class="button-positive"
+                               ng-click="resetAcct('{{account.account_id}}')">
+              Reset
+            </ion-option-button>
           </ion-item>
         </ion-list>
 
+        <div class="padding">
+          <a href="#/addNewAcct" class="button button-block button-calm">Add a New Account</a>
+        </div>
       </ion-content>
 
 

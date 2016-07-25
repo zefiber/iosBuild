@@ -9,6 +9,11 @@
       {
         "path": "/securitis",
         "proxyUrl": "http://107.22.132.180:8732/securitis/"
+      },
+	  {
+        "path": "/service",
+        "proxyUrl": "http://localhost:8732/service/"
       }
+	  
     ]
 }

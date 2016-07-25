@@ -213,10 +213,19 @@ services.factory('socketServ', function ($rootScope, $log, $q, localStorageServi
     return this;
 })
 
-services.factory('restfulApiService', function ($log, $http, $q) {
+services.factory('restfulApiService', function ($log, $http, $q, $base64, $rootScope) {
+
 
     this.doRestfulReq = function (url) {
         var d = $q.defer();
+        //$http.defaults.headers.common['Authorization'] = 'Basic ' + $base64.encode($rootScope.username + ':' + $rootScope.token);
+        // $http.defaults.headers.common = {"Access-Control-Request-Headers": "accept, origin, authorization"};
+        $http.defaults.headers.common.Authorization = 'Basic emU6YzJiOTdkNGEtZGViYy00Mjc3LWE2MGUtMTJjN2E1ZTJkY2M0';
+        // var config = {
+        //     headers:{
+        //         'Authorization': 'Basic ' + 'emU6YzJiOTdkNGEtZGViYy00Mjc3LWE2MGUtMTJjN2E1ZTJkY2M0'
+        //     }
+        // };
         $http.get(url).then(function (resp) {
             console.log(resp);
             // var respData = JSON.parse(resp.data);

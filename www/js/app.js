@@ -23,7 +23,7 @@
 // })
 
 
-angular.module('starter', ['ionic', 'ui.router', 'jett.ionic.filter.bar', 'starter.controllers', 'starter.services', 'starter.routers'])
+angular.module('starter', ['ionic', 'ui.router', 'jett.ionic.filter.bar', 'base64','starter.controllers', 'starter.services', 'starter.routers'])
 
   .run(function($ionicPlatform) {
     $ionicPlatform.ready(function() {

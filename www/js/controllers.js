@@ -82,6 +82,7 @@ angular.module('starter.controllers', [])
                     });
                 } else {
                     $rootScope.username = $scope.model.username;
+                    $rootScope.token = data.token;
                     console.log("login success");
                     //$state.go("tab.dash");
                     $location.path("/listWatchList");
@@ -126,25 +127,40 @@ angular.module('starter.controllers', [])
     })
 
 
-    .controller('listWatchListCtrl', function ($scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, pageNameService, localStorageService) {
+    .controller('listWatchListCtrl', function ($rootScope, $scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, ApiEndpoint, pageNameService, restfulApiService,localStorageService) {
 
         pageNameService.setPageName("list watchlist");
         $log.log(pageNameService.getPageName());
 
-        // Get watchlists from localstorage, set default values
-        $scope.watchlists = localStorageService.get('watchlists', [
-            {
-                id: '1',
-                name: 'watchList1',
-                desc: 'list1'
-            },
-            {
-                id: '2',
-                name: 'watchList2',
-                desc: 'list2'
 
-            }
-        ]);
+        var username = $rootScope.username;
+
+        $scope.watchlists = {};
+        restfulApiService.doRestfulReq(ApiEndpoint.url + "/service/watchlist/get").then(function success(data) {
+                console.log(data);
+                $scope.watchlists = data;
+            },
+            function error(err) {
+                console.log(err);
+            },
+            function notify(data) {
+                console.log(data);
+            });
+
+        // Get watchlists from localstorage, set default values
+        // $scope.watchlists = localStorageService.get('watchlists', [
+        //     {
+        //         id: '1',
+        //         name: 'watchList1',
+        //         desc: 'list1'
+        //     },
+        //     {
+        //         id: '2',
+        //         name: 'watchList2',
+        //         desc: 'list2'
+        //
+        //     }
+        // ]);
 
         localStorageService.update('watchlists', $scope.watchlists);
 
@@ -280,7 +296,47 @@ angular.module('starter.controllers', [])
     })
 
 
-    .controller('listAcctListCtrl', function ($rootScope, $scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, ApiEndpoint, pageNameService, restfulApiService) {
+    .controller('addNewAcctCtrl', function ($scope, $location, $ionicHistory, $log, $state, $stateParams,$ionicPopup, $ionicLoading, $ionicFilterBar, $timeout, pageNameService, socketServ, localStorageService) {
+        pageNameService.setPageName("addNewAcctCtrl");
+        $log.log(pageNameService.getPageName());
+
+        $scope.createEditNewAcct = function () {
+            console.log($scope.model.cashBalance);
+
+            var sendMsg = {};
+            if($stateParams.isEdit == "true"){
+                sendMsg = {action: 'resetaccount', account_id:$stateParams.index, new_balance: $scope.model.cashBalance};
+            }else{
+                sendMsg = {action: 'createaccountrequest', original_deposit: $scope.model.cashBalance};
+            }
+            var sendJSONMsg = angular.toJson(sendMsg);
+            console.log(sendJSONMsg);
+            socketServ.doReq(sendJSONMsg).then(function success(data) {
+                $log.log("receive resolve data:" + data);
+
+            }, function error(data) {
+                $log.log("error data:" + data);
+            }, function notify(data) {
+                $log.log("notifid data:" + data);
+                if (data.success == true) {
+                    $log.log("success data:" + data);
+                    $location.path("/listAcctList");
+                } else {
+                    $log.log(data.fail_reason);
+                    $ionicPopup.alert({
+                        title: 'Create or Reset Account Failed',
+                        template: data.fail_reason
+                    });
+                    return;
+
+                }
+            });
+        }
+
+    })
+
+
+    .controller('listAcctListCtrl', function ($rootScope, $scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, ApiEndpoint, pageNameService, socketServ, restfulApiService) {
 
         pageNameService.setPageName("list accountlist in listAcctListCtrl");
         $log.log(pageNameService.getPageName());
@@ -288,27 +344,38 @@ angular.module('starter.controllers', [])
         var username = $rootScope.username;
 
         $scope.accountlist = {};
-        restfulApiService.doRestfulReq(ApiEndpoint.url+ "/accounts/" + "xxhuzl123").then(function success(data){
-            console.log(data);
+        restfulApiService.doRestfulReq(ApiEndpoint.url + "/service/account/get").then(function success(data) {
+                console.log(data);
                 $scope.accountlist = data;
-            // for(var i = 0; i < data.length; i++){
-            //     accountlist.push(data[i]);
-            // }
-        },
-        function error(err){
-            console.log(err);
-        },
-        function notify(data){
-            console.log(data);
-        });
+                // for(var i = 0; i < data.length; i++){
+                //     accountlist.push(data[i]);
+                // }
+            },
+            function error(err) {
+                console.log(err);
+            },
+            function notify(data) {
+                console.log(data);
+            });
 
         $scope.goDetailAcctList = function () {
             $state.go("tab.holdings");
         }
 
+        $scope.addNewAcct = function () {
+            $state.go("addNewAcct");
+        }
+
         $scope.goBackToListAcctList = function () {
             $location.path("/listAcctList");
         }
+
+        $scope.resetAcct = function($index){
+            console.log("Edit Account id:"+$index);
+            $state.go("addNewAcct", {isEdit:true, index:$index});
+
+        }
+
     })
 
 
@@ -410,7 +477,7 @@ angular.module('starter.controllers', [])
         $log.log(pageNameService.getPageName());
 
 
-        $scope.show = function(){
+        $scope.show = function () {
             $ionicLoading.show({
                 template: '<p>Creating...</p><ion-spinner></ion-spinner>',
             }).then(function () {
@@ -418,7 +485,7 @@ angular.module('starter.controllers', [])
             });
         };
 
-        $scope.hide = function(){
+        $scope.hide = function () {
             $ionicLoading.hide();
         };
 
@@ -447,7 +514,7 @@ angular.module('starter.controllers', [])
                 function error(err) {
                     console.log("sign up connection fail");
                 }).finally(function ($ionicLoading) {
-                    $scope.hide($ionicLoading);
+                $scope.hide($ionicLoading);
 
             });
         };
@@ -488,7 +555,7 @@ angular.module('starter.controllers', [])
             // var sendMsg = localStorageService.generateMsgArr('subscribe', $scope.symbols);
             var sendStockIds = localStorageService.generateStockIdMsgArr('subscribe', $scope.ids);
             $log.log("send message:" + sendStockIds);
-            socketServ.loadRealTimeQuotes(sendStockIds).then(function success(data) {
+            socketServ.doReq(sendStockIds).then(function success(data) {
                 $log.log("receive resolve data:" + data);
             }, function error(data) {
                 $log.log("error data:" + data);
