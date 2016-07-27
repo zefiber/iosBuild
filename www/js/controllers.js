@@ -1,9 +1,16 @@
 angular.module('starter.controllers', [])
 
     .constant('ApiEndpoint', {
-        url: 'http://localhost:8732' // avoid cors for web testing
+        restfulAPIUrl: 'http://localhost:8732', // avoid cors for web testing
         //url:'http://172.25.50.21:8100' // avoid cors for ios in office
         //url: 'http://192.168.2.11:8100'    //mississauga home
+
+        // var ws = new WebSocket("ws://127.0.0.1:8181/");
+        // var ws = new WebSocket("ws://107.22.132.180:8877/");
+        //webSocketUrl: 'ws://107.22.132.180:8877'
+        // webSocketUrl: 'ws://172.24.142.70:9999'
+        webSocketUrl: 'ws://localhost:9999',
+        webSocketConnection: new WebSocket('ws://localhost:9999/')
         //TBD for connecting to eric's amazon server
     })
 
@@ -91,6 +98,12 @@ angular.module('starter.controllers', [])
             }, function error() {
                 //pop up
                 console.log("connect fail!");
+            }, function notify(data) {
+                $rootScope.username = $scope.model.username;
+                $rootScope.token = data.token;
+                console.log("login success");
+                //$state.go("tab.dash");
+                $location.path("/listWatchList");
             });
         };
 
@@ -127,25 +140,38 @@ angular.module('starter.controllers', [])
     })
 
 
-    .controller('listWatchListCtrl', function ($rootScope, $scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, ApiEndpoint, pageNameService, restfulApiService,localStorageService) {
+    .controller('listWatchListCtrl', function ($rootScope, $scope, $state, $location, $log, $ionicPopup, $ionicActionSheet, $timeout, ApiEndpoint, pageNameService, restfulApiService, localStorageService) {
 
         pageNameService.setPageName("list watchlist");
         $log.log(pageNameService.getPageName());
 
+        $scope.watchlists = [];
+        var watchlists = [];
+        angular.forEach(localStorageService.get('watchlists'), function (watchlist) {
+            watchlists.push(watchlist);
+        });
 
-        var username = $rootScope.username;
+        if (watchlists.length > 0) {  // and there is no update notification from server, otherwise we need to get latest data from database.
+            $scope.watchlists = watchlists;
+        } else {
+            restfulApiService.doRestfulReq(ApiEndpoint.restfulAPIUrl + '/watchlist/get/' + $rootScope.username).then(function success(data) {
+                    console.log("watchlist get:" + data);
 
-        $scope.watchlists = {};
-        restfulApiService.doRestfulReq(ApiEndpoint.url + "/service/watchlist/get").then(function success(data) {
-                console.log(data);
-                $scope.watchlists = data;
-            },
-            function error(err) {
-                console.log(err);
-            },
-            function notify(data) {
-                console.log(data);
-            });
+                    for(var i = 0; i < data.length; i++){
+                        $scope.watchlists.push(data[i]);
+
+                    }
+                    localStorageService.update('watchlists', $scope.watchlists);
+                    console.log(localStorageService.get('watchlists'));
+
+                },
+                function error(err) {
+                    console.log("err:"+err);
+                },
+                function notify(data) {
+                    console.log("notify:"+data);
+                });
+        }
 
         // Get watchlists from localstorage, set default values
         // $scope.watchlists = localStorageService.get('watchlists', [
@@ -162,16 +188,33 @@ angular.module('starter.controllers', [])
         //     }
         // ]);
 
-        localStorageService.update('watchlists', $scope.watchlists);
 
-        $scope.onItemDelete = function (id) {
+        $scope.onItemDelete = function (name) {
+            var watchlistname;
             var watchlistArr = localStorageService.get('watchlists');
             for (var i = 0; i < watchlistArr.length; i++) {
-                if (watchlistArr[i].id == id) {
+                if (watchlistArr[i].name == name) {
+                    watchlistname = name;
                     $scope.watchlists.splice(i, 1);
                     break;
                 }
             }
+
+            if (!watchlistname) {
+                return true;
+            }
+            restfulApiService.doRestfulReq(ApiEndpoint.restfulAPIUrl + '/watchlist/delete/' + $rootScope.username + '/' + watchlistname)
+                .then(function success(data) {
+                    console.log("success delete");
+                    //$scope.watchlists = data;
+                },
+                function error(err) {
+                    console.log(err);
+                },
+                function notify(data) {
+                    console.log(data);
+                });
+
 
             localStorageService.update('watchlists', $scope.watchlists);
 
@@ -193,12 +236,15 @@ angular.module('starter.controllers', [])
 
     })
 
-    .controller('editWatchListCtrl', function ($scope, $location, $ionicHistory, $log, $state, $ionicPopup, $ionicLoading, $ionicFilterBar, $timeout, pageNameService, localStorageService) {
+    .controller('editWatchListCtrl', function ($rootScope, $scope, $location, $ionicHistory, $log, $state, $ionicPopup, $ionicLoading, $ionicFilterBar, $timeout, ApiEndpoint, pageNameService, localStorageService, restfulApiService) {
         pageNameService.setPageName("editWatchListCtrl");
         $log.log(pageNameService.getPageName());
 
 
-        var watchlists = localStorageService.get('watchlists');
+        var watchlists = [];
+        angular.forEach(localStorageService.get('watchlists'), function (watchlist) {
+            watchlists.push(watchlist);
+        });
 
         function getWatchList(watchListId) {
             for (var i = 0; i < watchlists.length; i++) {
@@ -227,10 +273,20 @@ angular.module('starter.controllers', [])
                     name: watchListObj.name,
                     desc: watchListObj.desc
                 }
+
                 watchlists.push(newWatchListObj);
             }
 
-            localStorageService.update('watchlists', watchlists);
+            restfulApiService.doRestfulReq(ApiEndpoint.restfulAPIUrl + "/watchlist/add/" + $rootScope.username + "/" + watchListObj.name).then(function success(data) {
+                    console.log(data);
+                    localStorageService.update('watchlists', watchlists);
+                },
+                function error(err) {
+                    console.log(err);
+                },
+                function notify(data) {
+                    console.log(data);
+                });
         }
 
         // Function to update the symbols in localstorage
@@ -296,7 +352,7 @@ angular.module('starter.controllers', [])
     })
 
 
-    .controller('addNewAcctCtrl', function ($scope, $location, $ionicHistory, $log, $state, $stateParams,$ionicPopup, $ionicLoading, $ionicFilterBar, $timeout, pageNameService, socketServ, localStorageService) {
+    .controller('addNewAcctCtrl', function ($scope, $location, $ionicHistory, $log, $state, $stateParams, $ionicPopup, $ionicLoading, $ionicFilterBar, $timeout, pageNameService, socketServ, localStorageService) {
         pageNameService.setPageName("addNewAcctCtrl");
         $log.log(pageNameService.getPageName());
 
@@ -304,9 +360,13 @@ angular.module('starter.controllers', [])
             console.log($scope.model.cashBalance);
 
             var sendMsg = {};
-            if($stateParams.isEdit == "true"){
-                sendMsg = {action: 'resetaccount', account_id:$stateParams.index, new_balance: $scope.model.cashBalance};
-            }else{
+            if ($stateParams.isEdit == "true") {
+                sendMsg = {
+                    action: 'resetaccount',
+                    account_id: $stateParams.index,
+                    new_balance: $scope.model.cashBalance
+                };
+            } else {
                 sendMsg = {action: 'createaccountrequest', original_deposit: $scope.model.cashBalance};
             }
             var sendJSONMsg = angular.toJson(sendMsg);
@@ -344,7 +404,7 @@ angular.module('starter.controllers', [])
         var username = $rootScope.username;
 
         $scope.accountlist = {};
-        restfulApiService.doRestfulReq(ApiEndpoint.url + "/service/account/get").then(function success(data) {
+        restfulApiService.doRestfulReq(ApiEndpoint.restfulAPIUrl + "/account/get/" + username).then(function success(data) {
                 console.log(data);
                 $scope.accountlist = data;
                 // for(var i = 0; i < data.length; i++){
@@ -370,9 +430,9 @@ angular.module('starter.controllers', [])
             $location.path("/listAcctList");
         }
 
-        $scope.resetAcct = function($index){
-            console.log("Edit Account id:"+$index);
-            $state.go("addNewAcct", {isEdit:true, index:$index});
+        $scope.resetAcct = function ($index) {
+            console.log("Edit Account id:" + $index);
+            $state.go("addNewAcct", {isEdit: true, index: $index});
 
         }
 
@@ -521,16 +581,14 @@ angular.module('starter.controllers', [])
 
     })
 
-    .controller('WelcomeCtrl', function ($rootScope, $scope, $location, $log, $ionicActionSheet, pageNameService) {
+    .controller('WelcomeCtrl', function ($rootScope, $scope, $location, $log, $ionicActionSheet, pageNameService, ApiEndpoint) {
         pageNameService.setPageName("welcome");
         $log.log("current page:" + pageNameService.getPageName());
 
 
-        if (!$rootScope.ws) {
-            // var ws = new WebSocket("ws://127.0.0.1:8181/");
-            // var ws = new WebSocket("ws://107.22.132.180:8877/");
-            $rootScope.ws = new WebSocket("ws://172.24.142.2:8877"); // local windows
-        }
+        // if (!$rootScope.ws) {
+        //     $rootScope.ws = new WebSocket(ApiEndpoint.webSocketUrl); // local windows
+        // }
 
 
     })
@@ -622,7 +680,7 @@ angular.module('starter.controllers', [])
                     if (!filterText) {
                         return;
                     }
-                    var urlApi = ApiEndpoint.url + "/securitis";
+                    var urlApi = ApiEndpoint.restfulAPIUrl + "/securitis";
                     var url = urlApi + "/" + filterText.toUpperCase();
                     restfulApiService.doRestfulReq(url).then(function success(resp) {
                         console.log('Search securitis symbol success', resp);
@@ -797,7 +855,7 @@ angular.module('starter.controllers', [])
                     if (!filterText) {
                         return;
                     }
-                    var urlApi = ApiEndpoint.url + "/securitis";
+                    var urlApi = ApiEndpoint.restfulAPIUrl + "/securitis";
                     var url = urlApi + "/" + filterText.toUpperCase();
                     restfulApiService.doRestfulReq(url).then(function success(resp) {
                         console.log('Search securitis symbol success', resp);

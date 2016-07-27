@@ -49,9 +49,8 @@ services.factory('Chats', function () {
     };
 });
 
-services.factory('signInService', function ($q, $http, ApiEndpoint, socketServ) {
+services.factory('signInService', function ($q, $http, socketServ, $timeout) {
 
-    console.log('ApiEndpoint:' + ApiEndpoint.url);
     var signInService = {};
     // Create a new deferred object
 
@@ -75,10 +74,11 @@ services.factory('signInService', function ($q, $http, ApiEndpoint, socketServ) 
             defer.reject(err);
         },function notify(data) {
             console.log("do Req notify resp:" + data);
-            defer.resolve(data);
-        });
+            defer.notify(data);
 
+        });
         return defer.promise;
+
 
     };
 
@@ -132,9 +132,9 @@ services.factory('signUpService', function ($q, $http, socketServ) {
         }, function error(err) {
             console.log("do Req error resp:" + err);
             defer.reject(err);
-        },function notify(data) {
+        },function resolve(data) {
             console.log("do Req notify resp:" + data);
-            defer.resolve(data);
+            defer.notify(data);
         });
 
         return defer.promise;
@@ -176,35 +176,42 @@ services.factory('pageNameService', function () {
 
 });
 
-services.factory('socketServ', function ($rootScope, $log, $q, localStorageService) {
-
-
+services.factory('socketServ', function ($log, $q, localStorageService, ApiEndpoint, $timeout) {
 
     this.doReq = function (msgArr) {
         var d = $q.defer();
 
-        var ws = $rootScope.ws;
+        var ws = ApiEndpoint.webSocketConnection;
 
-        if(ws.readyState){
+        if(ws.readyState == 1){
+            $log.log("ws readyState:" + ws.readyState);
             //ws.send('{"action":"subscribe","symbol":"uwti"}');
-            //{"action":"subscribe","equityid":0}
             ws.send(msgArr);
+        }
+
+        ws.onerror = function(event){
+            $log.log("on error" + event);
         }
 
         ws.onopen = function (event) {
             $log.log("Web Socket connection has been established successfully");
+            //{"action":"subscribe","equityid":0}
+            $log.log("send msg:" + msgArr);
+            // ws.send(msgArr);
         };
+
+
 
         ws.onmessage = function (event) {
             //[{"symbol": "uwti","ask": 66.92539153943089,"bid": 10.900888923043798,"bidsize": 347,"asksize": 354}]
             $log.log("received a message", event.data);
             var stockObjArr = JSON.parse(event.data);
             d.notify(stockObjArr);
-            // d.resolve(stockObjArr);
+             //d.resolve(stockObjArr);
         };
 
         ws.onclose = function (event) {
-            $log.log("connection closed");
+            $log.log("connection closed:" );
         };
 
         return d.promise;
@@ -218,20 +225,15 @@ services.factory('restfulApiService', function ($log, $http, $q, $base64, $rootS
 
     this.doRestfulReq = function (url) {
         var d = $q.defer();
-        //$http.defaults.headers.common['Authorization'] = 'Basic ' + $base64.encode($rootScope.username + ':' + $rootScope.token);
-        // $http.defaults.headers.common = {"Access-Control-Request-Headers": "accept, origin, authorization"};
-        $http.defaults.headers.common.Authorization = 'Basic emU6YzJiOTdkNGEtZGViYy00Mjc3LWE2MGUtMTJjN2E1ZTJkY2M0';
-        // var config = {
-        //     headers:{
-        //         'Authorization': 'Basic ' + 'emU6YzJiOTdkNGEtZGViYy00Mjc3LWE2MGUtMTJjN2E1ZTJkY2M0'
-        //     }
-        // };
+        // $http.defaults.headers.common['Authorization'] = 'Basic ' + $base64.encode($rootScope.username + ':' + $rootScope.token);
         $http.get(url).then(function (resp) {
             console.log(resp);
             // var respData = JSON.parse(resp.data);
-            d.resolve(resp.data);
+            d.resolve("success:"+resp.data);
         }, function (err) {
-            d.reject(err);
+            d.reject("err:"+err);
+        }, function notify(data){
+            d.notify("notify:"+data);
         })
         return d.promise;
     }

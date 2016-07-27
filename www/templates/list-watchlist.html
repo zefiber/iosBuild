@@ -44,7 +44,7 @@ navigation history that also transitions its views in and out.
             <div style="display:inline-block;width:33%" class="col-offset-10">{{watchlist.name}}</div>
             <div style="display:inline-block;width:33%" class="col-offset-33">{{watchlist.desc}}</div>
             <ion-delete-button class="ion-minus-circled"
-                               ng-click="onItemDelete('{{watchlist.id}}')">
+                               ng-click="onItemDelete('{{watchlist.name}}')">
             </ion-delete-button>
             <ion-option-button class="button-positive"
                                ng-click="editWatchList('{{watchlist.id}}')">
